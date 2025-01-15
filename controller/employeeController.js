@@ -15,7 +15,7 @@ export const createEmployee = async (req, res) => {
       await EmployeeSchema.validateAsync(req.body);
     const existingRecord = await Employee.findOne({
       $or: [{ email }, { mobile }, { employee_id }],
-    });
+    }, {name: 1, email: 1, mobile: 1, employee_id: 1});
 
     if (existingRecord) {
       if (existingRecord.email === email) {
@@ -52,7 +52,12 @@ export const createEmployee = async (req, res) => {
 
 export const getAllEmployeedata = async (req, res) => {
   try {
-    const allemployee = await Employee.find();
+    const allemployee = await Employee.find(
+      {},{
+        _id: 0,
+        __v: 0
+      }
+    );
     res.status(200).json({
       message: "Employee data retrieved successfully",
       count: allemployee.length,
@@ -65,7 +70,26 @@ export const getAllEmployeedata = async (req, res) => {
     });
   }
 };
-
+export const getOneEmployeeDataById = async (req, res) => {
+  try {
+    const employee = await Employee.findOne({ employee_id: req.params.id },{
+      _id: 0,
+      __v: 0
+    });
+    if(!employee){
+     return res.status(404).json({error: 'Employee not found'});
+    }
+    res.status(200).json({
+      message: "Employee data retrieved successfully",
+      data: employee
+    });
+  } catch (error) {
+    logger.error("Error retrieving employee data", { error });
+    res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+};
 export const updateEmployeeDataById = async (req, res) => {
   try {
     const { name, email, mobile, employee_id } = req.body;

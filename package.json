@@ -1,11 +1,12 @@
 {
   "name": "cih_crud_node",
   "version": "1.0.0",
-  "description": "",
+  "description": "This repository contains a robust Node.js CRUD application built with Express.js and MongoDB, designed for creating, reading, updating, and deleting employee data. The application includes essential features such as logging, input validation, and error handling.",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "run"
+    "test": "run",
+    "dev": "nodemon index"
   },
   "author": "",
   "license": "ISC",
@@ -16,5 +17,9 @@
     "joi": "^17.13.3",
     "mongoose": "^8.9.5",
     "winston": "^3.17.0"
-  }
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  },
+  "keywords": []
 }
