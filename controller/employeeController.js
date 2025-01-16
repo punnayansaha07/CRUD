@@ -1,55 +1,41 @@
 import Employee from "../model/employeeModel.js";
+import sequelize from "../config/dbconfig.js";
+import { Op } from "sequelize";
+//import logger from "../Logger/logger.js";
+/*
 import Joi from "joi";
-import logger from "../Logger/logger.js";
-
 const EmployeeSchema = Joi.object({
   name: Joi.string().required(),
   email: Joi.string().email().required(),
   mobile: Joi.number().integer().required(),
   employee_id: Joi.number().integer().required(),
 });
+*/
 
 export const createEmployee = async (req, res) => {
   try {
-    const { name, email, mobile, employee_id } =
-      await EmployeeSchema.validateAsync(req.body);
-    const existingRecord = await Employee.findOne({
-      $or: [{ email }, { mobile }, { employee_id }],
-    }, {name: 1, email: 1, mobile: 1, employee_id: 1});
+    const { name, email, mobile, employee_id } = req.body;
 
-    if (existingRecord) {
-      if (existingRecord.email === email) {
-        return res.status(409).json({ error: "Email already exists" });
-      }
-      if (existingRecord.mobile === mobile) {
-        return res.status(409).json({ error: "Mobile already exists" });
-      }
-      if (existingRecord.employee_id === employee_id) {
-        return res.status(409).json({ error: "Employee ID already exists" });
-      }
-    }
-
-    const employee = await Employee.create({
-      name,
-      email,
-      mobile,
-      employee_id,
+    const existingEmployee = await Employee.findOne({
+      where: { [Op.or]: [{ email }, { mobile }, { employee_id }] },
     });
 
-    res
+    if (existingEmployee) {
+      return res.status(400).json({ error: "Employee already exists" });
+    }
+
+    const employee = await Employee.create({ name, email, mobile, employee_id });
+    //console.log(employee);
+    return res
       .status(201)
       .json({ message: "Employee created successfully", employee });
   } catch (error) {
-    logger.error("Error creating employee record", { error });
-
-    if (error.isJoi) {
-      return res.status(400).json({ error: error.message });
-    }
-
+    console.error("Error creating employee record", { error });
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
+/*
 export const getAllEmployeedata = async (req, res) => {
   try {
     const allemployee = await Employee.find(
@@ -69,68 +55,102 @@ export const getAllEmployeedata = async (req, res) => {
       error: "Internal server error",
     });
   }
-};
-export const getOneEmployeeDataById = async (req, res) => {
+}; 
+*/
+
+export const getAllEmployeedata = async (req, res) => {
   try {
-    const employee = await Employee.findOne({ employee_id: req.params.id },{
-      _id: 0,
-      __v: 0
+    const allEmployee = await Employee.findAll({
+      attributes: { exclude: ["createdAt", "updatedAt"] },
     });
-    if(!employee){
-     return res.status(404).json({error: 'Employee not found'});
-    }
+
     res.status(200).json({
       message: "Employee data retrieved successfully",
-      data: employee
+      count: allEmployee.length,
+      data: allEmployee,
     });
   } catch (error) {
-    logger.error("Error retrieving employee data", { error });
-    res.status(500).json({
-      error: "Internal server error",
-    });
+    console.error("Error retrieving employee data", { error });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
-export const updateEmployeeDataById = async (req, res) => {
-  try {
-    const { name, email, mobile, employee_id } = req.body;
 
-    const employee = await Employee.findOneAndUpdate(
-      { employee_id: req.params.id },
-      { name, email, mobile, employee_id },
-      { new: true, runValidators: true }
-    );
-    if (!employee) {
+
+export const getOneEmployeeDataById = async (req, res) => {
+  try {
+    const getEmployee = await Employee.findOne({
+      where: { employee_id: req.params.id },
+    });
+
+    if (!getEmployee) {
       return res.status(404).json({ error: "Employee not found" });
     }
-    res
-      .status(200)
-      .json({ meaasge: "Employee data udpated successfully", data: employee });
+
+    res.status(200).json({ message: "Employee retrieved successfully", getEmployee });
   } catch (error) {
-    logger.error("Error updating employee data", { error });
-    res.status(500).json({
-      error: "Internal server error",
+    console.error("Error retrieving employee data", { error });
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const updateEmployeeDataById = async (req, res) => {
+  try {
+    const { name, email, mobile } = req.body;
+
+    const targetedEmployee = await Employee.findOne({
+      where: { employee_id: req.params.id },
     });
+
+    if (!targetedEmployee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    const duplicate = await Employee.findOne({
+      where: {
+        [Op.or]: [{ email }, { mobile }],
+        employee_id: { [Op.ne]: req.params.id },
+      },
+    });
+
+    if (duplicate) {
+      return res.status(400).json({ error: "Email or mobile already in use" });
+    }
+
+    await targetedEmployee.update({ name, email, mobile });
+    res.status(200).json({
+      message: "Employee data updated successfully",
+      data: targetedEmployee,
+    });
+  } catch (error) {
+    console.error("Error updating employee data", { error });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
 export const deleteEmployee = async (req, res) => {
   try {
-      const employee = await Employee.findOneAndDelete({ employee_id: req.params.id });
+    const toDeleteEmployee = await Employee.findOne({
+      where: { employee_id: req.params.id },
+    });
 
-      if (!employee) {
-          logger.warn("Attempt to delete non-existent employee", { employee_id: req.params.id });
-          return res.status(404).json({ message: "Employee not found" });
-      }
-
-      logger.info("Employee deleted successfully", { employee_id: req.params.id });
-      res.status(200).json({ message: "Employee data deleted successfully" });
-  } catch (error) {
-      logger.error("Error deleting employee data", {
-          employee_id: req.params.id,
-          message: error.message,
-          stack: error.stack,
+    if (!toDeleteEmployee) {
+      console.warn("Attempt to delete non-existent employee", {
+        employee_id: req.params.id,
       });
-      res.status(500).json({ error: "Internal server error" });
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    await toDeleteEmployee.destroy();
+    console.info("Employee deleted successfully", {
+      employee_id: req.params.id,
+    });
+
+    res.status(200).json({ message: "Employee deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting employee data", {
+      employee_id: req.params.id,
+      error,
+    });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
-

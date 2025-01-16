@@ -1,3 +1,5 @@
 node_modules/
 .env
 error.log
+db/data
+db/docker-compose.yml

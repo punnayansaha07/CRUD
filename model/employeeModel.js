@@ -1,40 +1,45 @@
-import mongoose from "mongoose";
-const employeeSchema = new mongoose.Schema({
+import { DataTypes } from "sequelize";
+import sequelize from "../config/dbconfig.js";
+
+const Employee = sequelize.define(
+  "Employee",
+  {
+    employee_id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      validate: {
+        isInt: { msg: "Employee ID must be a number" },
+        len: [4, 4],
+      },
+    },
     name: {
-        type : String,
-        required : [true, "Enter Employee Name"],
-        trim : true
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: { msg: "Name cannot be empty" },
+      },
     },
     email: {
-        type : String,
-        required : [true, "Enter Email"],
-        unique : true,
-        trim : true
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: { msg: "Invalid email address" },
+      },
     },
     mobile: {
-        type: Number,
-        required: [true, "Enter Mobile Number"],
-        unique: true,
-        validate: {
-            validator: function(v) {
-                return /^\d{10}$/.test(v.toString());
-            },
-            message: props => `${props.value} is not a valid 10-digit mobile number!`
-        }
+      type: DataTypes.BIGINT,
+      allowNull: false,
+      unique: true,
+      validate: {
+        is: /^\d{10}$/,
+      },
     },
-    employee_id: {
-        type: Number,
-        required: [true, "Enter your Employee ID"],
-        unique: true,
-        validate: {
-            validator: function(v) {
-                return /^\d{4}$/.test(v.toString());
-            },
-            message: props => `${props.value} is not a valid 4-digit employee id!`
-        }
-    }
-       
-})
+  },
+  {
+    timestamps: false,
+  }
+);
 
-const Employee = mongoose.model("Employee", employeeSchema);
 export default Employee;
