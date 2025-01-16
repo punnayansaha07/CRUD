@@ -20,7 +20,7 @@ const Employee = sequelize.define(
         notEmpty: { msg: "Name cannot be empty" },
       },
     },
-    email: {
+    email: { 
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
