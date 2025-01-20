@@ -1,5 +1,6 @@
 import express from 'express';
 import { createEmployee ,getAllEmployeedata, updateEmployeeDataById,deleteEmployee,getOneEmployeeDataById,deleteAllEmployee,createEmployeeDept} from '../controller/employeeController.js';
+import { createEmployeeReport } from '../controller/createReport.js';
 const router = express.Router();
 router.post('/',createEmployee);
 router.get('/',getAllEmployeedata);
@@ -8,4 +9,5 @@ router.delete('/:id',deleteEmployee);
 router.get('/:id',getOneEmployeeDataById);
 router.delete('/',deleteAllEmployee);
 router.post('/createDept',createEmployeeDept);
+router.post('/createReport/:id',createEmployeeReport);
 export default router;
